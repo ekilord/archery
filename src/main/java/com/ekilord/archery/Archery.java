@@ -1,6 +1,7 @@
 package com.ekilord.archery;
 
 import com.ekilord.archery.common.registry.ArcheryAttributes;
+import com.ekilord.archery.common.registry.ArcheryItems;
 import com.mojang.logging.LogUtils;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
@@ -24,6 +25,7 @@ public class Archery
 
         modEventBus.addListener(this::commonSetup);
 
+        ArcheryItems.register(modEventBus);
         ArcheryAttributes.register(modEventBus);
 
         MinecraftForge.EVENT_BUS.register(this);

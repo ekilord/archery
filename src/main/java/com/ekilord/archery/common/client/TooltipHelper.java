@@ -1,115 +1,73 @@
 package com.ekilord.archery.common.client;
 
 import com.ekilord.archery.common.registry.ArcheryAttributes;
+import com.ekilord.archery.common.registry.ArcheryConstants;
+import com.google.common.collect.Multimap;
 import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.contents.TranslatableContents;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.MobType;
+import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ProjectileWeaponItem;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static net.minecraft.world.item.ItemStack.ATTRIBUTE_MODIFIER_FORMAT;
 
-public class TooltipHelper {
-    public static void updateTooltip(ItemStack itemStack, List<Component> tooltip) {
-        if (itemStack.getItem() instanceof ProjectileWeaponItem) {
-            mergeTooltips(tooltip);
-            //replaceAttributeLines_BlueWithGreen(lines);
+public class  TooltipHelper {
+    public static void updateTooltip(LivingEntity pEntity, ItemStack pItemStack, List<Component> pTooltip) {
+        if (pItemStack.getItem() instanceof ProjectileWeaponItem) {
+            mergeTooltips(pEntity, pItemStack, pTooltip);
         }
     }
 
-    private static void mergeTooltips(List<Component> tooltip) {
-        tooltip.add(Component.literal("\n"));
-        tooltip.add(Component.translatable("item.modifiers.main_hand").withStyle(ChatFormatting.GRAY));
-    }
+    private static void mergeTooltips(LivingEntity pEntity, ItemStack pItemStack, List<Component> pTooltip) {
+        EquipmentSlot equipmentSlot = LivingEntity.getEquipmentSlotForItem(pItemStack);
+        Multimap<Attribute, AttributeModifier> modifierMultimap = pItemStack.getAttributeModifiers(equipmentSlot);
+        if (!modifierMultimap.isEmpty()) {
+            pTooltip.add(CommonComponents.EMPTY);
+            pTooltip.add(Component.translatable("item.modifiers." + equipmentSlot.getName()).withStyle(ChatFormatting.GRAY));
 
-    private static void mergeAttributeLines_MainHandOffHand(List<Component> tooltip) {
-        System.out.println("Merging attribute lines");
-        List<Component> heldInHandLines = new ArrayList<>();
-        List<Component> mainHandAttributes = new ArrayList<>();
-        List<Component> offHandAttributes = new ArrayList<>();
-        for (int i = 0; i < tooltip.size(); i++) {
-            var line = tooltip.get(i);
-            var content = line.getContents();
-            if (content instanceof TranslatableContents translatableText) {
-                if (translatableText.getKey().startsWith("item.modifiers")) {
-                    heldInHandLines.add(line);
-                }
-                if (translatableText.getKey().startsWith("attribute.modifier")) {
-                    if (heldInHandLines.size() == 1) {
-                        mainHandAttributes.add(line);
-                    }
-                    if (heldInHandLines.size() == 2) {
-                        offHandAttributes.add(line);
-                    }
-                }
-            }
-        }
-        if(heldInHandLines.size() == 2) {
-            var mainHandLine = tooltip.indexOf(heldInHandLines.get(0));
-            var offHandLine = tooltip.indexOf(heldInHandLines.get(1));
-            tooltip.remove(mainHandLine);
-            tooltip.add(mainHandLine, Component.translatable("item.modifiers.both_hands").withStyle(ChatFormatting.GRAY));
-            tooltip.remove(offHandLine);
-            for (var offhandAttribute: offHandAttributes) {
-                if(mainHandAttributes.contains(offhandAttribute)) {
-                    tooltip.remove(tooltip.lastIndexOf(offhandAttribute));
-                }
-            }
-
-            var lastIndex = tooltip.size() - 1;
-            var lastLine = tooltip.get(lastIndex);
-            if (lastLine.getString().isEmpty()) {
-                tooltip.remove(lastIndex);
-            }
-        }
-    }
-
-    private static void replaceAttributeLines_BlueWithGreen(List<Component> tooltip) {
-        System.out.println("Replacing attribute lines");
-        var attributeTranslationKey = ArcheryAttributes.RANGED_DAMAGE.get().getDescriptionId();
-        for (int i = 0; i < tooltip.size(); i++)  {
-            var line = tooltip.get(i);
-            var content = line.getContents();
-//            System.out.println(i + ": " + content + " " + line.getClass());
-            if (content instanceof TranslatableContents translatable) {
-                var isProjectileAttributeLine = false;
-                var attributeValue = 0.0;
-//                System.out.println("Is translatable content");
-                if (translatable.getKey().startsWith("attribute.modifier.plus.0")) { // `.0` suffix for addition
-//                    System.out.println("Is attribute line");
-                    for (var arg: translatable.getArgs()) {
-//                        System.out.println("Sub-content type: " + arg.getClass());
-                        if (arg instanceof String string) {
-                            try {
-                                var number = Double.valueOf(string);
-                                attributeValue = number;
-                            } catch (Exception ignored) { }
-                        }
-                        if (arg instanceof Component attributeText) {
-                            if (attributeText.getContents() instanceof TranslatableContents attributeTranslatable) {
-//                                System.out.println("Translatable sub-content: " + arg);
-                                if (attributeTranslatable.getKey().startsWith(attributeTranslationKey)) {
-//                                    System.out.println("Projectile attribute found");
-                                    isProjectileAttributeLine = true;
-                                }
-                            }
-                        }
+            for (Map.Entry<Attribute, AttributeModifier> entry : modifierMultimap.entries()) {
+                AttributeModifier attributeModifier = entry.getValue();
+                double d0 = attributeModifier.getAmount();
+                boolean flag = false;
+                if (pEntity != null) {
+                    if (attributeModifier.getId() == ArcheryConstants.PROJECTILE_DAMAGE_MODIFIER_ID) {
+                        d0 += pEntity.getAttributeBaseValue(ArcheryAttributes.PROJECTILE_DAMAGE.get());
+                        d0 += (double) EnchantmentHelper.getDamageBonus(pItemStack, MobType.UNDEFINED);
+                        flag = true;
+                    } else if (attributeModifier.getId() == ArcheryConstants.DRAW_SPEED_MODIFIER_ID) {
+                        d0 += pEntity.getAttributeBaseValue(ArcheryAttributes.DRAW_SPEED.get());
+                        flag = true;
                     }
                 }
 
-                if (isProjectileAttributeLine && attributeValue > 0) {
-                    // The construction of this line is copied from ItemStack.class
-                    var greenAttributeLine = Component.literal(" ")
-                            .append(
-                                    Component.translatable("attribute.modifier.equals." + AttributeModifier.Operation.ADDITION,
-                                            ATTRIBUTE_MODIFIER_FORMAT.format(attributeValue), Component.translatable(attributeTranslationKey))
-                            )
-                            .withStyle(ChatFormatting.DARK_GREEN);
-                    tooltip.set(i, greenAttributeLine);
+                double d1;
+                if (attributeModifier.getOperation() != AttributeModifier.Operation.MULTIPLY_BASE && attributeModifier.getOperation() != AttributeModifier.Operation.MULTIPLY_TOTAL) {
+                    if (entry.getKey().equals(Attributes.KNOCKBACK_RESISTANCE)) {
+                        d1 = d0 * 10.0D;
+                    } else {
+                        d1 = d0;
+                    }
+                } else {
+                    d1 = d0 * 100.0D;
+                }
+
+                if (flag) {
+                    pTooltip.add(CommonComponents.space().append(Component.translatable("attribute.modifier.equals." + attributeModifier.getOperation().toValue(), ATTRIBUTE_MODIFIER_FORMAT.format(d1), Component.translatable(entry.getKey().getDescriptionId()))).withStyle(ChatFormatting.DARK_GREEN));
+                } else if (d0 > 0.0D) {
+                    pTooltip.add(Component.translatable("attribute.modifier.plus." + attributeModifier.getOperation().toValue(), ATTRIBUTE_MODIFIER_FORMAT.format(d1), Component.translatable(entry.getKey().getDescriptionId())).withStyle(ChatFormatting.BLUE));
+                } else if (d0 < 0.0D) {
+                    d1 *= -1.0D;
+                    pTooltip.add(Component.translatable("attribute.modifier.take." + attributeModifier.getOperation().toValue(), ATTRIBUTE_MODIFIER_FORMAT.format(d1), Component.translatable(entry.getKey().getDescriptionId())).withStyle(ChatFormatting.RED));
                 }
             }
         }

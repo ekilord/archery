@@ -10,6 +10,6 @@ import net.minecraftforge.fml.common.Mod;
 public class ClientEvents {
     @SubscribeEvent
     public static void onToolTip(ItemTooltipEvent event) {
-        TooltipHelper.updateTooltip(event.getItemStack(), event.getToolTip());
+        TooltipHelper.updateTooltip(event.getEntity(), event.getItemStack(), event.getToolTip());
     }
 }

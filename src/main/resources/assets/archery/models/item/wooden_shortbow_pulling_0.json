@@ -1,0 +1,6 @@
+{
+    "parent": "archery:item/wooden_shortbow",
+    "textures": {
+        "layer0": "archery:item/wooden_shortbow_pulling_0"
+    }
+}

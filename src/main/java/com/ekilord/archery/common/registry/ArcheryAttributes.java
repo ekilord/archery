@@ -15,6 +15,6 @@ public class ArcheryAttributes {
         ATTRIBUTES.register(modEventBus);
     }
 
-
-    public static final RegistryObject<Attribute> RANGED_DAMAGE = ATTRIBUTES.register("ranged_damage", () -> new RangedAttribute("", 0, 0.0, 1024.0));
+    public static final RegistryObject<Attribute> PROJECTILE_DAMAGE = ATTRIBUTES.register("projectile_damage", () -> new RangedAttribute("", 0, 0.0, 1024.0));
+    public static final RegistryObject<Attribute> DRAW_SPEED = ATTRIBUTES.register("draw_speed", () -> new RangedAttribute("", 1, 0.0, 1024.0));
 }
