@@ -1,7 +1,7 @@
 package com.ekilord.archery.common.client;
 
 import com.ekilord.archery.common.registry.ArcheryAttributes;
-import com.ekilord.archery.common.registry.ArcheryConstants;
+import com.ekilord.archery.common.registry.ArcheryItems;
 import com.google.common.collect.Multimap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.CommonComponents;
@@ -37,37 +37,37 @@ public class  TooltipHelper {
 
             for (Map.Entry<Attribute, AttributeModifier> entry : modifierMultimap.entries()) {
                 AttributeModifier attributeModifier = entry.getValue();
-                double d0 = attributeModifier.getAmount();
-                boolean flag = false;
+                double currentAttribute = attributeModifier.getAmount();
+                boolean modifiesThis = false;
                 if (pEntity != null) {
-                    if (attributeModifier.getId() == ArcheryConstants.PROJECTILE_DAMAGE_MODIFIER_ID) {
-                        d0 += pEntity.getAttributeBaseValue(ArcheryAttributes.PROJECTILE_DAMAGE.get());
-                        d0 += (double) EnchantmentHelper.getDamageBonus(pItemStack, MobType.UNDEFINED);
-                        flag = true;
-                    } else if (attributeModifier.getId() == ArcheryConstants.DRAW_SPEED_MODIFIER_ID) {
-                        d0 += pEntity.getAttributeBaseValue(ArcheryAttributes.DRAW_SPEED.get());
-                        flag = true;
+                    if (attributeModifier.getId() == ArcheryItems.RANGED_DAMAGE_MODIFIER_ID) {
+                        currentAttribute += pEntity.getAttributeBaseValue(ArcheryAttributes.RANGED_DAMAGE.get());
+                        currentAttribute += (double) EnchantmentHelper.getDamageBonus(pItemStack, MobType.UNDEFINED);
+                        modifiesThis = true;
+                    } else if (attributeModifier.getId() == ArcheryItems.DRAW_SPEED_MODIFIER_ID) {
+                        currentAttribute += pEntity.getAttributeBaseValue(ArcheryAttributes.DRAW_SPEED.get());
+                        modifiesThis = true;
                     }
                 }
 
-                double d1;
+                double modifiedCurrentAttribute;
                 if (attributeModifier.getOperation() != AttributeModifier.Operation.MULTIPLY_BASE && attributeModifier.getOperation() != AttributeModifier.Operation.MULTIPLY_TOTAL) {
                     if (entry.getKey().equals(Attributes.KNOCKBACK_RESISTANCE)) {
-                        d1 = d0 * 10.0D;
+                        modifiedCurrentAttribute = currentAttribute * 10.0D;
                     } else {
-                        d1 = d0;
+                        modifiedCurrentAttribute = currentAttribute;
                     }
                 } else {
-                    d1 = d0 * 100.0D;
+                    modifiedCurrentAttribute = currentAttribute * 100.0D;
                 }
 
-                if (flag) {
-                    pTooltip.add(CommonComponents.space().append(Component.translatable("attribute.modifier.equals." + attributeModifier.getOperation().toValue(), ATTRIBUTE_MODIFIER_FORMAT.format(d1), Component.translatable(entry.getKey().getDescriptionId()))).withStyle(ChatFormatting.DARK_GREEN));
-                } else if (d0 > 0.0D) {
-                    pTooltip.add(Component.translatable("attribute.modifier.plus." + attributeModifier.getOperation().toValue(), ATTRIBUTE_MODIFIER_FORMAT.format(d1), Component.translatable(entry.getKey().getDescriptionId())).withStyle(ChatFormatting.BLUE));
-                } else if (d0 < 0.0D) {
-                    d1 *= -1.0D;
-                    pTooltip.add(Component.translatable("attribute.modifier.take." + attributeModifier.getOperation().toValue(), ATTRIBUTE_MODIFIER_FORMAT.format(d1), Component.translatable(entry.getKey().getDescriptionId())).withStyle(ChatFormatting.RED));
+                if (modifiesThis) {
+                    pTooltip.add(CommonComponents.space().append(Component.translatable("attribute.modifier.equals." + attributeModifier.getOperation().toValue(), ATTRIBUTE_MODIFIER_FORMAT.format(modifiedCurrentAttribute), Component.translatable(entry.getKey().getDescriptionId()))).withStyle(ChatFormatting.DARK_GREEN));
+                } else if (currentAttribute > 0.0D) {
+                    pTooltip.add(Component.translatable("attribute.modifier.plus." + attributeModifier.getOperation().toValue(), ATTRIBUTE_MODIFIER_FORMAT.format(modifiedCurrentAttribute), Component.translatable(entry.getKey().getDescriptionId())).withStyle(ChatFormatting.BLUE));
+                } else if (currentAttribute < 0.0D) {
+                    modifiedCurrentAttribute *= -1.0D;
+                    pTooltip.add(Component.translatable("attribute.modifier.take." + attributeModifier.getOperation().toValue(), ATTRIBUTE_MODIFIER_FORMAT.format(modifiedCurrentAttribute), Component.translatable(entry.getKey().getDescriptionId())).withStyle(ChatFormatting.RED));
                 }
             }
         }
